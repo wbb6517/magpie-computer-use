@@ -82,4 +82,6 @@ macOS 辅助功能、屏幕录制及原生进程认证仍按官方流程处理�
 
 必要 macOS 网关与共享客户端基于 [LCU 0.11.4](https://github.com/amontlabs/lcu) 适配，保留[第三方声明](THIRD_PARTY_NOTICES.md)、[网关来源](src/gateway/SOURCES.md)及[客户端修改记录](vendor/lcu-client/PATCHES.md)。插件不分发、下载、复制或修改 OpenAI 官方二进制。
 
+本插件通过 `magpie.kind: "tools"` 声明为工具类型。
+
 GitHub 仓库已设置 `magpie-plugin` topic。npm 发布、GitHub 发现与官方推荐是不同状态；推荐列表需另向 [magpie-community/plugins](https://github.com/magpie-community/plugins) 申请。图标通过官方 `magpie.icon` 字段提供，发布标准见 [magpie 插件文档](https://usemagpie.ai/docs/zh/plugins#publish)。
