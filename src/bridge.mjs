@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { VERSION, PLUGIN_NAME } from './config.mjs';
 import { isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -177,7 +178,7 @@ export async function runBridge({
     }
     const tools = toolSurface === 'native' ? NATIVE_TOOLS : originalTools;
     const exposed = toolSurface === 'native' ? NATIVE_TOOL_NAMES : PUBLIC_TOOLS;
-    server = new Server({ name: 'magpie-computer-use', version: '0.4.0' }, {
+    server = new Server({ name: PLUGIN_NAME, version: VERSION }, {
       capabilities: { tools: {} }, instructions: toolSurface === 'native' ? `${client.instructions}\n\n${NATIVE_INSTRUCTIONS}` : client.instructions,
     });
     server.onerror = error => report(`MCP server error: ${error?.message ?? error}`);

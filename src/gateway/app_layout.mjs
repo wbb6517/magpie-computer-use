@@ -1,9 +1,9 @@
 // 基于 amontlabs/lcu v0.11.4，提交 bf45b8edf01bc380def2ba8355b60a4ab5e1857d。
 // Copyright (c) 2026 Amont Labs. MIT license; see LICENSE in this directory.
 // 在受支持的官方应用目录布局中定位原始 Codex CLI 文件。
-// 与启动链路保持一致，使用 process.getBuiltinModule，避免每次启动创建 ESM 内置模块包装层。
-const { lstatSync } = process.getBuiltinModule('node:fs');
-const { join, relative, sep } = process.getBuiltinModule('node:path');
+// 同时用于 magpie 的可信 Bun launcher 预检和原始 Node 网关。
+import { lstatSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 
 function regularFile(root, path) {
   try {

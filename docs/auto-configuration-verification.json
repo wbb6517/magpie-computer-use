@@ -1,0 +1,72 @@
+{
+  "checkedAt": "2026-10-18T01:48:12.272Z",
+  "pluginVersion": "0.5.0",
+  "configuration": "automatic-local-codex",
+  "settingsPage": false,
+  "privateOptionsRead": false,
+  "privateOptionsWritten": false,
+  "installation": {
+    "appVersion": "26.1013.40934",
+    "appBuild": "20770",
+    "runtimeVersion": "0.0.30/20261014203459-0849368674e2",
+    "platform": "darwin-arm64",
+    "originalSignatureVerifiedBeforeCandidateNodeStarts": true
+  },
+  "tests": {
+    "passed": 41,
+    "total": 41,
+    "syntaxAndManifestModulesPassed": 29,
+    "unsignedRuntimeNeverExecuted": true,
+    "nativeConfiguredTimeoutPreserved": true
+  },
+  "magpie": {
+    "version": "0.1.1285",
+    "actualResourceLibraryCheckPassed": true,
+    "publicToolCount": 10,
+    "settingsNavigationAbsent": true,
+    "exactLegacyConfigArgvAccepted": true,
+    "existingAgentSelectionPreserved": [
+      "claude"
+    ],
+    "newDefinitionWithoutConfigSnapshotVerifiedByFixture": true
+  },
+  "runtime": {
+    "nativeDiscoveryPassed": true,
+    "managedBunDoctorPassed": true,
+    "toolDiscoveryVersion": "0.5.0",
+    "appControlAttempted": false,
+    "permissionPromptsAutomaticallyApproved": 0
+  },
+  "browser": {
+    "initializationPassed": true,
+    "availableBrowserCount": 0,
+    "browserControlTested": false,
+    "otherChatSessionAdoptionTested": false
+  },
+  "nativeApproval": {
+    "originalInterceptorAndSharedMacosApprovalPathInspected": true,
+    "pluginDoesNotReadOrRewriteApprovalStore": true,
+    "newGuiOrPersistedApprovalEndToEndTested": false
+  },
+  "compatibility": {
+    "nativeRuntimeEnvironmentAllowlisted": true,
+    "existingHostEnvironmentTakesPrecedence": true,
+    "credentialsAndSessionIdentitiesNotImportedFromConfig": true
+  },
+  "historicalGuiRecord": "claude-code-verification.json",
+  "limitations": [
+    "No new GUI or persistent app-approval end-to-end acceptance was performed for 0.5.0.",
+    "Browser discovery returned zero; sharing a Codex chat browser connection is not established."
+  ],
+  "package": {
+    "dryRunPassed": true,
+    "entryCount": 42,
+    "settingsPageFiles": 0,
+    "officialBinariesIncluded": false
+  },
+  "cleanup": {
+    "temporaryReviewCopiesAndNpmCacheRemoved": true,
+    "temporaryWebServerStopped": true,
+    "originalCodexRuntimeAndApprovalStoreUnmodified": true
+  }
+}

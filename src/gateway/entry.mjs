@@ -8,6 +8,7 @@ import { randomUUID } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { locateCodexTools } from './app_layout.mjs';
+import { readCodexRuntimeSettings, browserService } from '../codex-settings.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const TEAM = '2DC432GLL2';
@@ -51,7 +52,7 @@ export function inspectRuntime(appPath) {
   if (process.platform !== 'darwin' || process.arch !== 'arm64') throw new Error('Embedded gateway supports Apple Silicon macOS.');
   if (typeof appPath !== 'string' || !path.isAbsolute(appPath) || unsafePath.test(appPath)) throw new Error('Official app path must be an absolute local path.');
   const info = fs.lstatSync(appPath);
-  if (!info.isDirectory() || info.isSymbolicLink() || path.basename(appPath) !== 'ChatGPT.app') throw new Error('Select the complete original ChatGPT.app directory.');
+  if (!info.isDirectory() || info.isSymbolicLink() || !appPath.endsWith('.app')) throw new Error('Select the complete original Codex desktop application bundle.');
   const app = fs.realpathSync(appPath);
   const resources = path.join(app, 'Contents/Resources');
   const runtimePath = path.join(resources, 'cua_node');
@@ -80,13 +81,17 @@ export function inspectRuntime(appPath) {
 export function runtimeEnvironment(runtime, { chrome = false, env: source = process.env } = {}) {
   if (source.LCU_ALLOW_AGENT_HOST_APPROVAL === '1') throw new Error('Agent-host approval bypass is not supported.');
   if (['off', 'disabled'].includes(source.LCU_NODE_REPL_SANDBOX?.toLowerCase())) throw new Error('Disabling the original sandbox is not supported.');
-  const env = { ...source };
+  const native = readCodexRuntimeSettings({ env: source });
+  const env = { ...native.environment, ...source };
+  env.CODEX_HOME = native.codexHome;
   const moduleDir = path.join(runtime.runtimePath, 'lib/node_modules');
   // 原生服务使用系统报告的当前账户目录；调用方覆盖 HOME 时也不能据此推断账户 IPC 目录。
   const accountHome = os.userInfo().homedir;
-  if (!('CODEX_HOME' in env)) env.CODEX_HOME = path.join('HOME' in env ? env.HOME : accountHome, '.codex');
   const wrapper = path.join(HERE, 'macos_sky_service.mjs');
-  const services = { sky: wrapper, ...(chrome ? { browser: '@oai/browser-desktop/service' } : {}) };
+  const configuredBrowser = browserService(source.NODE_REPL_TRUSTED_SERVICES) ?? native.browserService;
+  const browser = configuredBrowser && (!path.isAbsolute(configuredBrowser) || fs.existsSync(configuredBrowser))
+    ? configuredBrowser : '@oai/browser-desktop/service';
+  const services = { sky: wrapper, ...(chrome ? { browser } : {}) };
   const unique = values => [...new Set(values.filter(Boolean))].join(':');
   Object.assign(env, {
     PATH: `${path.join(runtime.runtimePath, 'bin')}:${source.PATH || '/usr/bin:/bin'}`,
@@ -97,10 +102,8 @@ export function runtimeEnvironment(runtime, { chrome = false, env: source = proc
     CUA_REPL_BROWSER_ENV: 'codex-app', CODEX_CLI_PATH: runtime.codexCli, SKY_CUA_SERVICE_PATH: runtime.helperPath,
     LCU_MAC_SKY_SERVICE_PATH: runtime.servicePath, LCU_MAC_SKY_CLIENT_PATH: runtime.macClientPath,
     NODE_REPL_DISABLE_ANALYTICS: '1', BROWSER_USE_DISABLE_AMBIENT_NETWORK: '1',
-    NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS: source.NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS || '1000',
-    BROWSER_USE_AVAILABLE_BACKENDS: 'chrome', BROWSER_USE_TINYSKY_ENABLED: '1',
+    NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS: env.NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS || '1000',
     BROWSER_USE_CODEX_APP_VERSION: runtime.appVersion,
-    BROWSER_USE_CODEX_APP_BUILD_FLAVOR: ['dev','agent','nightly','internal-alpha','public-beta','prod'].includes(source.BUILD_FLAVOR) ? source.BUILD_FLAVOR : 'prod',
   });
   // 连接启动时提供默认元数据；后续工具调用由共享客户端写入宿主传入的会话与轮次身份。
   if (!('NODE_REPL_REQUEST_META' in env)) {

@@ -1,6 +1,6 @@
 {
   "name": "magpie-computer-use",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Computer Use extension for magpie with an automatically registered ten-tool MCP",
   "type": "module",
   "main": "./index.mjs",
@@ -14,7 +14,6 @@
     "index.mjs",
     "src",
     "bin",
-    "page",
     "scripts",
     "vendor",
     "README.md",
@@ -37,7 +36,8 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.30.0"
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "smol-toml": "1.9.1"
   },
   "keywords": [
     "magpie",
@@ -46,12 +46,5 @@
     "mcp",
     "lcu"
   ],
-  "license": "MIT",
-  "magpie": {
-    "page": {
-      "title": "Computer Use",
-      "file": "page/index.html",
-      "icon": "page/icon.svg"
-    }
-  }
+  "license": "MIT"
 }

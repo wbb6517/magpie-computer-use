@@ -169,8 +169,8 @@
   "rawLogsPublished": false,
   "accountOrLocalPathsPublished": false,
   "publishedArtifacts": {
-    "magpieSettingsScreenshot": "screenshot.jpg",
-    "syntheticGuiResultScreenshot": "gui-test.jpg"
+    "syntheticGuiResultScreenshot": "gui-test.jpg",
+    "obsoleteSettingsScreenshotRemovedIn": "0.5.0"
   },
   "cleanup": {
     "downloadedRuntimePresent": false,

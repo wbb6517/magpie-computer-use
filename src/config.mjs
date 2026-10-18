@@ -1,42 +1,31 @@
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { discoverCodexApp } from './codex.mjs';
+import { readCodexRuntimeSettings } from './codex-settings.mjs';
 
 export const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PLUGIN_NAME = 'magpie-computer-use';
-export const VERSION = '0.4.0';
-export const DEFAULTS = Object.freeze({ appPath: '/Applications/ChatGPT.app', chrome: false, requestTimeoutMs: 120000, idleTimeoutMs: 300000 });
-const expandHome = value => value === '~' ? os.homedir() : value.startsWith('~/') ? path.join(os.homedir(), value.slice(2)) : value;
-const bounded = (value, fallback, min, max, name) => {
-  if (value === undefined) return fallback;
-  if (!Number.isInteger(value) || value < min || value > max) throw new Error(`${name} 必须是 ${min}–${max} 之间的整数。`);
-  return value;
-};
+export const VERSION = '0.5.0';
+// 仅为 MCP 传输保留内部预算，不再作为独立插件选项暴露或持久化。
+export const DEFAULTS = Object.freeze({ requestTimeoutMs: 120000, idleTimeoutMs: 300000 });
+
+// 只供内部开发诊断覆盖路径；普通扩展启动不读取旧选项或用户填写的路径。
 export function normalizeOptions(input = {}) {
-  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('插件选项必须是对象。');
-  const rawApp = input.appPath ?? DEFAULTS.appPath;
-  if (typeof rawApp !== 'string' || /[\r\n\0]/.test(rawApp)) throw new Error('运行时路径必须是有效的字符串绝对路径。');
-  const appPath = expandHome(rawApp);
-  if (!path.isAbsolute(appPath)) throw new Error('appPath 必须是绝对路径。');
-  if (input.chrome !== undefined && typeof input.chrome !== 'boolean') throw new Error('chrome 必须是布尔值。');
-  return { appPath: path.normalize(appPath), chrome: input.chrome === true,
-    requestTimeoutMs: bounded(input.requestTimeoutMs, DEFAULTS.requestTimeoutMs, 30000, 600000, 'requestTimeoutMs'),
-    idleTimeoutMs: bounded(input.idleTimeoutMs, DEFAULTS.idleTimeoutMs, 60000, 1800000, 'idleTimeoutMs') };
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('运行选项必须是对象。');
+  const { appPath } = input;
+  if (typeof appPath !== 'string' || /[\r\n\0]/.test(appPath) || !path.isAbsolute(appPath)) throw new Error('运行时路径必须是字符串绝对路径。');
+  const app = path.normalize(appPath);
+  const browser = path.join(app, 'Contents/Resources/cua_node/lib/node_modules/@oai/browser-desktop/package.json');
+  return { appPath: app, chrome: fs.existsSync(browser), ...DEFAULTS };
 }
-export function magpieConfigDir(env = process.env) {
-  return path.join(env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'magpie');
-}
-export function readJson(file, fallback) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
-  catch (error) { if (error.code === 'ENOENT' && fallback !== undefined) return fallback; throw new Error(`无法读取 ${file}：${error.message}`); }
-}
-// MCP 从插件加载时写出的稳定快照读取设置，不猜测 npm/GitHub 安装 spec。
-export function loadOptions({ options, configFile, env = process.env } = {}) {
+
+export function loadOptions({ options, env = process.env, discover = discoverCodexApp } = {}) {
   if (options) return normalizeOptions(options);
-  const file = configFile ? path.resolve(configFile) : path.join(magpieConfigDir(env), 'plugins', PLUGIN_NAME, 'options.json');
-  return normalizeOptions(readJson(file, configFile ? undefined : {}));
+  const native = readCodexRuntimeSettings({ env });
+  return normalizeOptions({ appPath: discover({ env: { ...native.environment, ...(native.codexCli ? { CODEX_CLI_PATH: native.codexCli } : {}), ...env } }) });
 }
+
 export function runtimePaths(options) {
   const nodePath = path.join(options.appPath, 'Contents/Resources/cua_node/bin/node');
   const gatewayPath = path.join(PROJECT_ROOT, 'src/gateway/entry.mjs');
@@ -50,9 +39,10 @@ export function status(options) {
   const executable = file => { try { fs.accessSync(file, fs.constants.X_OK); return true; } catch { return false; } };
   const sdk = path.join(PROJECT_ROOT, 'node_modules/@modelcontextprotocol/sdk/package.json');
   return { plugin: PLUGIN_NAME, version: VERSION, backend: 'embedded-gateway', externalLcuRequired: false,
+    configuration: 'automatic-local-codex',
     platform: `${process.platform}-${process.arch}`, supportedPlatform: process.platform === 'darwin' && process.arch === 'arm64',
     appPath: options.appPath, appExists: fs.existsSync(options.appPath), gatewayPath: paths.gatewayPath,
     runtimePrepared: fs.existsSync(paths.gatewayPath) && executable(paths.nodePath), originalNodeAvailable: executable(paths.nodePath), dependenciesInstalled: fs.existsSync(sdk),
-    chrome: options.chrome, requestTimeoutMs: options.requestTimeoutMs, idleTimeoutMs: options.idleTimeoutMs,
-    lifecycle: 'One isolated runtime per MCP connection; host turn metadata is preserved when supplied' };
+    browserServiceAvailable: options.chrome,
+    lifecycle: 'One isolated runtime per MCP connection; original Codex persisted app approvals and host turn metadata are preserved' };
 }

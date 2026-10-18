@@ -17,3 +17,7 @@
 ## Original Computer Use runtime
 
 OpenAI binaries and instructions are not redistributed. They are read in place from the user's existing, signed ChatGPT installation. The plugin does not modify or re-sign them, copy authentication secrets, or grant macOS/app access. Original terms and permissions remain applicable.
+
+## TOML parser
+
+`smol-toml` 1.9.1, BSD-3-Clause, installed through the package lock. It parses the local Codex configuration; only the documented runtime environment allowlist is reused. See its packaged LICENSE.

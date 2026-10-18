@@ -1,14 +1,17 @@
 # 变更记录
 
-## 0.4.0（未发布）
+## 0.5.0（未发布）
 
-- 产品入口统一为 magpie“扩展”：添加并加载插件后，自动把 `magpie-computer-use` 登记到“资源库 → MCP 服务器”，由用户选择 Agent 分发。
-- 默认提供 `list_apps`、`get_app_state`、`click`、`perform_secondary_action`、`set_value`、`select_text`、`scroll`、`drag`、`press_key`、`type_text` 十个工具。原始 `js` / `js_reset` 保留为内部脚本接口。
-- 包内包含设置页、必要 macOS 网关及共享客户端，直接使用完整官方 ChatGPT 安装，无需外部 LCU，不复制或修改 OpenAI 二进制。
-- 保留应用/helper 身份与签名校验、原始授权、图片、错误、进度和上下文清理；无 elicitation 时取消授权，阻止控制 magpie 与已识别的 Agent 宿主。
-- 修复原始 REPL 跨 cell 重复声明共享 Map 导致应用目标丢失的问题，改为按 session/turn/app 保存独立绑定，并增加原始声明重置行为的回归覆盖。
-- 记录真实 magpie 扩展流程和 Claude Code 十工具 GUI 验收；保留滚动方向语义限制及未测范围，不将无工具错误等同于全部行为符合预期。
-- 整理扩展安装、资源库分发、完整工具参数、工作原理、故障排查、停用/移除和开发验证文档。
-- 保留 LCU MIT 来源及修改记录。GitHub 发布、topic 发现和官方精选申请分别记录，当前不宣称已上架。
+- 删除独立设置页及路径、Chrome、超时选项；每次 MCP 启动自动发现完整本机 Codex，支持运行中应用、标准目录、Spotlight 和重命名应用，执行前保留官方身份及深签名校验。
+- 由原始运行时沿用与桌面 Always-allowed apps 共用的持久应用批准；新应用询问仍走原始 elicitation，不读取登录凭据或转借其他会话临时授权。
+- 沿用原生 Sky 模块与正常继承的连接环境，不扫描其他 session pipe。内部 MCP 预算仅负责本连接管理，不承诺与 Codex 所有行为一致。
+- 新资源库条目不使用选项快照；旧精确 `mcp --config` 格式仅作兼容，不读取旧文件，保留已有 Agent 选择。
+- 浏览器按原始组件可用性启用对应服务，保持默认十操作工具。新版验证与 0.4 历史结果分开记录。
 
-详细测试结果与当前限制见 [验证记录](docs/VERIFICATION.md)。
+## 0.4.0（历史开发版本，未发布）
+
+- magpie 扩展加载后自动登记资源库 MCP，用户选择 Agent；当时包含独立设置页和私有选项快照。
+- 提供十操作工具，保留官方原始运行时、授权、图片和清理；修复原始 REPL 跨 cell 目标丢失问题。
+- 在指定 magpie、Claude Code 和自有 AppKit fixture 完成历史验收，滚动方向有未查明限制。
+
+详细版本与测试边界见 [验证记录](docs/VERIFICATION.md)。

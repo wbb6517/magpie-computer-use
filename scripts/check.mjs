@@ -13,15 +13,16 @@ async function files(dir) {
   return out;
 }
 const candidates = [path.join(root, 'index.mjs')];
-for (const dir of ['src', 'bin', 'page', 'scripts', 'tests', 'vendor']) candidates.push(...await files(path.join(root, dir)));
+for (const dir of ['src', 'bin', 'scripts', 'tests', 'vendor']) candidates.push(...await files(path.join(root, dir)));
 for (const file of candidates) {
   const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr || `Syntax check failed: ${file}`);
 }
 const pkg = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8'));
-for (const file of [pkg.main, pkg.magpie.page.file, pkg.magpie.page.icon, 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md']) await fs.access(path.join(root, file));
+for (const file of [pkg.main, 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md']) await fs.access(path.join(root, file));
+const { VERSION } = await import(path.join(root, 'src/config.mjs'));
+if (pkg.version !== VERSION) throw new Error('Package and MCP versions must match');
 const { default: plugin } = await import(path.join(root, 'index.mjs'));
 if (plugin.id !== 'magpie-computer-use' || typeof plugin.server !== 'function') throw new Error('Missing magpie plugin lifecycle entry');
-const page = spawnSync(process.execPath, ['scripts/check-page.mjs'], { cwd: root, encoding: 'utf8' });
-if (page.status !== 0) throw new Error(page.stderr || page.stdout);
-process.stdout.write(`Syntax and manifest checks passed (${candidates.length} modules).\n${page.stdout}`);
+if (pkg.magpie?.page) throw new Error('Zero-configuration extension must not declare a settings page');
+process.stdout.write(`Syntax, lifecycle and zero-configuration manifest checks passed (${candidates.length} modules).\n`);

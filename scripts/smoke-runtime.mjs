@@ -9,7 +9,7 @@ import { NATIVE_TOOLS } from '../src/native-tools.mjs';
 
 const record = { checkedAt: new Date().toISOString(), backend: 'embedded-gateway', externalLcuRequired: false,
   appControlAttempted: false, automaticallyApprovedApps: 0 };
-const client = new Client({ name: 'magpie-computer-use-smoke', version: '0.4.0' }, { capabilities: { elicitation: { form: {} } } });
+const client = new Client({ name: 'magpie-computer-use-smoke', version: '0.5.0' }, { capabilities: { elicitation: { form: {} } } });
 client.setRequestHandler(ElicitRequestSchema, async () => { record.approvalsCancelled = (record.approvalsCancelled || 0) + 1; return { action: 'cancel' }; });
 const transport = new StdioClientTransport({ command: process.execPath,
   args: [path.join(PROJECT_ROOT, 'bin/magpie-computer-use.mjs'), 'mcp'], cwd: PROJECT_ROOT, stderr: 'pipe' });

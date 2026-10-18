@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
-import { normalizeOptions, PROJECT_ROOT, PLUGIN_NAME } from './config.mjs';
+import { PROJECT_ROOT, PLUGIN_NAME } from './config.mjs';
 import { run } from './process.mjs';
 
 async function locateMagpie() {
@@ -22,16 +21,18 @@ function absolutePath(value, name) {
   return path.resolve(value);
 }
 
+// 仅用于识别本插件旧版本的精确参数，不创建、读取或删除该文件。
 export function snapshotPath(directory) {
   return path.join(absolutePath(directory, 'magpie 配置目录'), 'plugins', PLUGIN_NAME, 'options.json');
 }
 
 export function libraryMcpDefinition(directory, launcher = process.execPath) {
+  absolutePath(directory, 'magpie 配置目录');
   return {
     name: PLUGIN_NAME,
     transport: 'stdio',
     command: absolutePath(launcher, 'MCP 启动程序'),
-    args: [path.join(PROJECT_ROOT, 'bin/magpie-computer-use.mjs'), 'mcp', '--config', snapshotPath(directory)],
+    args: [path.join(PROJECT_ROOT, 'bin/magpie-computer-use.mjs'), 'mcp'],
     agents: [],
   };
 }
@@ -50,57 +51,34 @@ async function readLibrary(directory) {
   }
 }
 
-function sameDefinition(existing, definition) {
-  return existing.transport === 'stdio' && existing.command === definition.command &&
-    JSON.stringify(existing.args ?? []) === JSON.stringify(definition.args);
+function acceptedDefinition(existing, definition, directory) {
+  if (existing?.transport !== 'stdio' || existing.command !== definition.command) return false;
+  const args = existing.args ?? [];
+  if (JSON.stringify(args) === JSON.stringify(definition.args)) return true;
+  // 旧版固定快照参数由 CLI 兼容接受并忽略。保持资源库条目原样，
+  // 从而保留用户选择、禁用工具和所有其他字段，无需 remove/add。
+  return Array.isArray(args) && args.length === 4 && args[0] === definition.args[0] &&
+    args[1] === 'mcp' && args[2] === '--config' && args[3] === snapshotPath(directory);
 }
 
-function checkExisting(existing, definition) {
-  if (!existing || sameDefinition(existing, definition)) return;
-  const ownCli = existing.transport === 'stdio' && existing.args?.[0] === definition.args[0] && existing.args?.[1] === 'mcp';
-  if (ownCli) {
-    throw new Error('magpie 资源库中已有本插件的旧版 MCP 配置。请在资源库编辑该条目，迁移到当前插件配置；原有 Agent 选择不会被自动覆盖。');
-  }
-  throw new Error(`magpie 资源库已有同名的其他 MCP（${PLUGIN_NAME}），插件不会覆盖它；请先在资源库检查或重命名。`);
+function checkExisting(existing, definition, directory) {
+  if (!existing || acceptedDefinition(existing, definition, directory)) return;
+  throw new Error(`magpie 资源库已有同名的其他或自定义 MCP（${PLUGIN_NAME}），插件不会覆盖它；请先在资源库检查或重命名。`);
 }
 
-async function writeSnapshot(file, options) {
-  const directory = path.dirname(file);
-  await fs.mkdir(directory, { recursive: true, mode: 0o700 });
-  const info = await fs.lstat(directory);
-  if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('插件配置目录必须是本机普通目录，不能是符号链接。');
-  await fs.chmod(directory, 0o700);
-  const temporary = path.join(directory, `.options-${process.pid}-${randomUUID()}.tmp`);
-  let handle;
-  try {
-    handle = await fs.open(temporary, 'wx', 0o600);
-    await handle.writeFile(`${JSON.stringify(options, null, 2)}\n`, 'utf8');
-    await handle.sync();
-    await handle.close();
-    handle = undefined;
-    await fs.rename(temporary, file);
-  } finally {
-    await handle?.close().catch(() => {});
-    await fs.unlink(temporary).catch(error => { if (error.code !== 'ENOENT') throw error; });
-  }
-}
-
-// magpie 加载插件时仅登记本包的 MCP；不启动原始运行时，不发现应用或请求授权。
-export async function ensureLibraryMcp(input, rawOptions, {
+// 插件加载只登记无设置的 MCP。旧 rawOptions 不再参与运行时选择，
+// 不写私有配置，不启动运行时或请求应用授权。
+export async function ensureLibraryMcp(input, _rawOptions, {
   runner = run,
   launcher = process.execPath,
   magpie = locateMagpie,
 } = {}) {
-  // 所有参数先验证，失败时不写入本机选项快照。
-  const options = normalizeOptions(rawOptions);
   const directory = absolutePath(input?.directory, 'magpie 配置目录');
   const definition = libraryMcpDefinition(directory, launcher);
-  const configFile = snapshotPath(directory);
   const library = await readLibrary(directory);
   const existing = library.mcp?.find(entry => entry?.name === PLUGIN_NAME);
-  checkExisting(existing, definition);
-  await writeSnapshot(configFile, options);
-  if (existing) return { registered: true, created: false, configFile, definition };
+  checkExisting(existing, definition, directory);
+  if (existing) return { registered: true, created: false, definition };
 
   const executable = absolutePath(typeof magpie === 'function' ? await magpie() : magpie, 'magpie 启动程序');
   const env = { ...process.env };
@@ -111,14 +89,14 @@ export async function ensureLibraryMcp(input, rawOptions, {
       cwd: directory, env, timeoutMs: 30_000,
     });
   } catch (error) {
-    // 多个宿主可能同时加载。CLI 拒绝重名时，只接受另一宿主刚写入的相同定义。
+    // 多个宿主同时加载时，只接受另一个宿主刚写出的本插件已知定义。
     const concurrent = (await readLibrary(directory)).mcp?.find(entry => entry?.name === PLUGIN_NAME);
-    if (!concurrent || !sameDefinition(concurrent, definition)) throw error;
-    return { registered: true, created: false, configFile, definition };
+    if (!acceptedDefinition(concurrent, definition, directory)) throw error;
+    return { registered: true, created: false, definition };
   }
   const added = (await readLibrary(directory)).mcp?.find(entry => entry?.name === PLUGIN_NAME);
-  if (!added || !sameDefinition(added, definition)) {
+  if (!acceptedDefinition(added, definition, directory)) {
     throw new Error('magpie 未在当前配置目录登记 Computer Use MCP；请检查插件加载错误。');
   }
-  return { registered: true, created: true, configFile, definition };
+  return { registered: true, created: true, definition };
 }

@@ -22,18 +22,22 @@ export function assertRuntimeEnvironment(env = process.env) {
 async function requireRuntime(options) {
   const info = status(options);
   if (!info.supportedPlatform) throw new Error('此版本支持 Apple Silicon macOS。');
-  if (!info.runtimePrepared) throw new Error('缺少内置网关或官方 ChatGPT 运行时：先运行 npm run verify-runtime。');
+  if (!info.runtimePrepared) throw new Error('缺少本机 Codex 的完整 Computer Use 运行时，请更新官方桌面应用后重连 MCP。');
   if (!info.dependenciesInstalled) throw new Error('插件依赖不完整：请在 magpie 的扩展页面重新安装或更新本插件。');
+  // 校验必须在当前可信 launcher 中完成，不能先执行候选包内的 Node 再让它自验。
+  const { inspectRuntime } = await import('./gateway/entry.mjs');
+  inspectRuntime(options.appPath);
   return runtimePaths(options);
 }
 // CLI 仅供 magpie 生成的 MCP 条目和开发诊断使用；用户从扩展页面安装。
-const help = `magpie Computer Use · 内部入口与开发诊断\n\n请从 magpie“扩展”添加插件，MCP 会自动加入资源库。\n\n  mcp                    启动资源库条目调用的 stdio MCP\n  prepare                校验官方运行时\n  status [--json]        只读环境信息\n  doctor [--json]        原始运行时只读发现\n\n  --config /path/options.json   magpie 插件保存的选项快照\n  --app /Applications/ChatGPT.app  开发诊断临时覆盖应用路径\n  --surface native|javascript   内部工具接口（默认十工具）\n`;
+const help = `magpie Computer Use · 内部入口与开发诊断\n\n请从 magpie“扩展”添加插件，MCP 会自动加入资源库。\n\n  mcp                    启动资源库条目调用的 stdio MCP\n  prepare                校验官方运行时\n  status [--json]        只读环境信息\n  doctor [--json]        原始运行时只读发现\n\n  --app /Applications/ChatGPT.app  仅开发诊断临时覆盖应用路径\n  --surface native|javascript   内部工具接口（默认十工具）\n`;
 export async function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   if (args.help || args.h || ['help', '--help', '-h'].includes(args.command)) { process.stdout.write(help); return; }
-  const loaded = loadOptions({ configFile: args.config });
+  // --config 仅兼容 0.4 资源库 argv，不再读取其文件或沿用其中的覆盖设置。
+  const loaded = loadOptions(args.app ? { options: { appPath: args.app } } : {});
   if (args.surface && !['native', 'javascript'].includes(args.surface)) throw new Error('--surface 必须是 native 或 javascript。');
-  const options = args.app ? loadOptions({ options: { ...loaded, appPath: args.app } }) : loaded;
+  const options = loaded;
   if (args.command === 'status') { process.stdout.write(JSON.stringify(status(options), null, 2) + '\n'); return; }
   if (args.command === 'prepare') {
     assertRuntimeEnvironment();
