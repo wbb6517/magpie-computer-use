@@ -12,6 +12,8 @@ npm test
 npm run check
 ```
 
+卸载验收使用临时 magpie 配置根和临时项目，核对普通宿主退出不删除、移除插件后自动撤销，以及项目配置暂时写入失败后的账本重试。官方全库同步还会处理指令等内容，应保持外层沙箱对真实配置的保护，不用提升权限绕过测试隔离。
+
 隔离测试检查发现顺序、歧义处理、旧资源兼容、十工具映射、原始 REPL 绑定、上下文、图片和授权转发及清理。`check` 核对语法、生命周期和无设置页 manifest。旧版 31 项测试与 8 项设置页检查仅属 0.4 历史，不能作为 0.5 当前检查数量。
 
 简单文档和注释修改无需额外编写测试；协议、授权或生命周期变化应运行相关现有检查，必要时增加能识别实际回归的用例。
@@ -52,7 +54,7 @@ npm run fixture:gui
 
 ## 发布和提交
 
-当前尚未发布或进入官方精选。先验收 magpie 扩展加载、自动登记、Agent 选择、Codex 发现、原生批准与卸载边界。后续 GitHub 发布可设置 `magpie-plugin` topic；精选需另外向 [magpie-community/plugins](https://github.com/magpie-community/plugins) 申请收录。未经授权不上传或发布。
+npm 发布准备和官方推荐收录按 [发布说明](docs/PUBLISHING.md) 分别处理。先验收 magpie 扩展加载、自动登记、Agent 选择、Codex 发现、原生批准与卸载边界。后续 GitHub 发布可设置 `magpie-plugin` topic；精选需另外向 [magpie-community/plugins](https://github.com/magpie-community/plugins) 申请收录。未经授权不上传或发布。
 
 ```sh
 npm test

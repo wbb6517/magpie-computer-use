@@ -1,3 +1,8 @@
+/**
+ * 工作流 ③：连接 Agent 和官方运行时的桥接层。
+ * 对外：stdio MCP Server，发布十个操作。对内：MCP Client，把操作交给原始 js 工具执行。
+ * 同时负责新授权询问往返、会话归属、图片/错误/进度转发以及取消和退出清理。
+ */
 import { randomUUID } from 'node:crypto';
 import { VERSION, PLUGIN_NAME } from './config.mjs';
 import { isAbsolute } from 'node:path';
@@ -81,6 +86,7 @@ export async function runBridge({
   }
 
   // 先拒绝 magpie 本身及其他代理宿主，再把原始授权请求交回客户端，避免代理自行批准。
+  // 只有原始运行时仍需询问宿主的批准才会到这里；已有持久批准由原始组件处理。
   async function elicit(params, { signal } = {}) {
     if (blockedApproval(params)) return { action: 'decline' };
     // 即便继承环境包含 LCU 仅供测试的绕过配置，也强制执行正常使用时的授权守卫。
@@ -165,6 +171,7 @@ export async function runBridge({
   const onSignal = signal => { void close(signal || 'signal'); };
 
   try {
+    // 第一条 MCP 连接朝向内部网关/官方运行时；它会启动子进程并发现 js、js_reset。
     client = await createClient({ command: runtimeCommand, onElicitation: elicit });
     let connectTimer;
     try {
@@ -176,6 +183,7 @@ export async function runBridge({
     if (originalTools.length !== PUBLIC_TOOLS.size || ![...PUBLIC_TOOLS].every(name => originalTools.some(tool => tool.name === name))) {
       throw new Error('Runtime must provide the original js and js_reset tools');
     }
+    // 对 Agent 发布十工具 schema；内部原始运行时仍接收 js/js_reset，不要求模型写脚本。
     const tools = toolSurface === 'native' ? NATIVE_TOOLS : originalTools;
     const exposed = toolSurface === 'native' ? NATIVE_TOOL_NAMES : PUBLIC_TOOLS;
     server = new Server({ name: PLUGIN_NAME, version: VERSION }, {
@@ -187,9 +195,11 @@ export async function runBridge({
       const { name, arguments: args = {}, _meta: metadata } = request.params;
       if (closing) throw new Error('Computer Use connection is closing');
       if (!exposed.has(name)) throw new Error(`Unknown Computer Use tool: ${name}`);
+      // 先确定调用归属，再生成脚本；模型参数不能选择其他会话或已结束的上下文。
       const identity = hostIdentity(metadata, connectionIdentity);
       const key = identityKey(identity);
       if (ending.has(key) || endedHostContexts.has(key)) throw new Error('Computer Use context has ended or is being cleaned up');
+      // 例如 click({app, element_index}) 被 nativeCall() 转为固定的 target.click(...) 脚本。
       const invocation = toolSurface === 'native' ? { name: 'js', args: nativeCall(name, args, identity) } : { name, args };
       contexts.set(key, identity);
       clearTimeout(idleTimer);
@@ -209,6 +219,7 @@ export async function runBridge({
         finally { budget.dispose(); }
       })();
       active.add(record);
+      // MCP content/image/isError 原样返回；不把图片变成文字，也不把工具错误包装成成功。
       try { return await record.done; }
       finally {
         active.delete(record);
@@ -224,6 +235,7 @@ export async function runBridge({
     server.onclose = () => { void close('transport-close'); };
     input.once('end', onEnd); input.once('error', onInputError);
     process.on('SIGTERM', onSignal); process.on('SIGINT', onSignal);
+    // 第二条 MCP 连接朝向 Agent，使用当前进程的 stdin/stdout 接收 tools/list、tools/call。
     await server.connect(new StdioServerTransport(input, output));
     scheduleIdle();
     return { server, client, close, closed, get connectionIdentity() { return { ...connectionIdentity }; } };

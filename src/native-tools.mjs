@@ -1,3 +1,4 @@
+/** 工作流 ④：十工具到原始 cua API 的映射层；这里只生成脚本，执行发生在官方 REPL 中。 */
 import { createHash } from 'node:crypto';
 
 // 十个原生 Computer Use 操作的兼容接口。
@@ -8,6 +9,7 @@ const text = { type: 'string' };
 const number = { type: 'number' };
 const object = (properties, required = []) => ({ type: 'object', properties, additionalProperties: false, ...(required.length ? { required } : {}) });
 const tool = (name, description, properties, required) => ({ name, description, inputSchema: object(properties, required) });
+// 这是 Agent 在 tools/list 中看到的公开协议；实际执行由下方 nativeCall() 映射。
 export const NATIVE_TOOLS = [
   tool('list_apps', '列出本机运行或近期使用过的应用。', {}),
   tool('get_app_state', '选择应用并按原始流程请求授权，返回其当前窗口的界面树和截图。操作应用前先调用；需要新截图时再次调用。', { app }, ['app']),
@@ -47,6 +49,7 @@ function validate(name, args) {
 /** 将用户值编码为 JSON 数据并套入固定操作模板，避免把输入文字解释为可执行代码。 */
 export function nativeCall(name, args, { sessionId, turnId } = {}) {
   validate(name, args);
+  // 应用发现不需要预先选中目标；其余操作必须关联同一连接/轮次下的应用对象。
   if (name === 'list_apps') return { code: 'await cua.listApps();', title: '列出应用' };
   if (!sessionId || !turnId) throw new Error('Native operations require the current connection context');
   // 缓存键同时包含会话、轮次和应用，防止复用其他上下文的应用对象与界面元素索引。
@@ -66,6 +69,8 @@ export function nativeCall(name, args, { sessionId, turnId } = {}) {
   };
   // 原始 REPL 会为每个 cell 重新初始化该 cell 声明的 var。仅在选应用时声明对应绑定，
   // 后续操作直接读取，避免重复的 Map 声明把上一调用保存的目标清空。
+  // get_app_state 通过 cua.getApp() 触发原始访问策略并保存目标；后续动作复用目标。
+  // 传入的元素索引来自该目标的最新界面树，动作完成后再读取一次界面树给 Agent。
   const body = name === 'get_app_state'
     ? `${binding} = await cua.getApp(${literal(args.app)});\nawait ${binding}.getScreenshot();`
     : `if (typeof ${binding} === 'undefined') throw new Error('Call get_app_state for this app in the current context before interacting');\nconst target = ${binding};\n${calls[name]}\nawait target.getAXState();`;

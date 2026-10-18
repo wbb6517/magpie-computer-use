@@ -15,3 +15,5 @@ Chrome selects the original browser surface only. This package does not include 
 本次注释维护：将内置网关与 macOS 宿主的关键英文说明转换为简体中文，补充签名验证、账户身份、轮次清理、超时与恢复边界的原因说明；保留上游版权声明、标识符、日志及所有可执行语句。
 
 0.5.0: official-app discovery is handled by `src/codex.mjs`; this launcher accepts renamed complete `.app` bundles while retaining bundle identity and deep signature checks. Safe runtime environment settings and the configured browser service come from the local Codex config via `src/codex-settings.mjs`. The launcher no longer forces a Chrome-only backend or its own TinySky/build-flavor choices. Native helper IPC, the original node_repl persisted-app approval interceptor, original policy checks, and caller-provided current host connections remain in place.
+
+工作流注释维护（2026-10-18）：补充入口、Sky 包装器与生命周期宿主之间的调用说明；可执行 token 与 AST 已比较，未改变执行逻辑。

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <title>magpie Computer Use</title>
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="#2A67F5"/>
+  <rect x="23" y="28" width="82" height="66" rx="10" fill="#FFFFFF"/>
+  <path d="M23 47h82" stroke="#DDEAFE" stroke-width="4"/>
+  <circle cx="34" cy="38" r="3" fill="#2A67F5"/>
+  <circle cx="44" cy="38" r="3" fill="#DDEAFE"/>
+  <circle cx="54" cy="38" r="3" fill="#DDEAFE"/>
+  <path d="m61 59 33 25-16 3-8 16-9-44Z" fill="#17324D" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round"/>
+</svg>

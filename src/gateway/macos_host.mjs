@@ -1,3 +1,7 @@
+/**
+ * 工作流 ⑦：生命周期收尾宿主，通过私有本机 socket 接收轮次登记、清理和服务恢复请求。
+ * 它不提供模型工具或应用授权界面；实际结束通知交给已校验的原始 macOS 客户端。
+ */
 // 基于 amontlabs/lcu v0.11.4，提交 bf45b8edf01bc380def2ba8355b60a4ab5e1857d。
 // Copyright (c) 2026 Amont Labs. MIT license; see LICENSE in this directory.
 // 为一个 MCP 进程管理原始 macOS 客户端的 turn-ended 命令。
@@ -606,6 +610,7 @@ const closeServer = (server, address) => new Promise((resolve) => {
  * 轮次结束 ID 触发原始客户端命令；`turn` 将轮次记为待结束，供 stop() 兜底清理；
  * `recover` 在正常请求路径之外启动或复用过期服务恢复。
  */
+/** 由网关为这条 MCP 连接创建；供 Sky 包装器报告活跃轮次及请求结束清理。 */
 export async function startOriginalHost({ client, env = process.env, recover = recoverResponse }) {
   try {
     fs.accessSync(client, fs.constants.X_OK);

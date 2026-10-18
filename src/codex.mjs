@@ -1,3 +1,4 @@
+/** 工作流 ②a：只发现本机完整 Codex 的位置，不启动目标应用，也不处理应用访问批准。 */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -21,7 +22,7 @@ function run(runner, command, args) {
   } catch { return ''; }
 }
 
-// 发现阶段只检查身份元数据和所需组件；执行前仍由网关递归验证官方签名。
+// 这里只筛选候选安装；cli.requireRuntime() 会在执行候选 Node 前完成完整签名校验。
 export function isCodexInstallation(app, { runner = spawnSync } = {}) {
   if (typeof app !== 'string' || !path.isAbsolute(app) || unsafe.test(app) || !app.endsWith('.app')) return false;
   try {
@@ -40,6 +41,7 @@ export function discoverCodexApp({
   runner = spawnSync, probe = app => isCodexInstallation(app, { runner }),
 } = {}) {
   const first = values => [...new Set(values.filter(Boolean))].find(probe);
+  // 优先沿用宿主提供或从本机 Codex 配置取得的安装位置。
   const inherited = first([containingApp(env.CODEX_CLI_PATH), containingApp(executable)]);
   if (inherited) return inherited;
 
@@ -49,6 +51,7 @@ export function discoverCodexApp({
   if (running.length > 1) throw new Error('同时运行了多份 Codex 安装；请保留需要使用的一份后重连 MCP。');
   if (running.length === 1) return running[0];
 
+  // 进程列表不可读取或没有可用实例时，继续检查常见安装位置。
   const applications = ['/Applications', path.join(home, 'Applications')];
   const known = applications.flatMap(directory => ['Codex.app', 'ChatGPT.app'].map(name => path.join(directory, name)));
   const standard = first(known);

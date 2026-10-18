@@ -1,3 +1,7 @@
+/**
+ * 工作流 ⑤：被桥接客户端作为子进程启动的网关。
+ * 再次校验安装 → 合并原生环境 → 创建本连接的生命周期宿主 → 启动官方 cua-repl。
+ */
 // magpie Computer Use 内置的 macOS 运行时启动入口。
 // 启动、环境与生命周期设计改编自 LCU v0.11.4，采用 MIT 许可（Amont Labs）。
 // 许可与来源见 LICENSE、SOURCES.md；直接使用原位置的 OpenAI 二进制，不修改其内容。
@@ -91,6 +95,7 @@ export function runtimeEnvironment(runtime, { chrome = false, env: source = proc
   const configuredBrowser = browserService(source.NODE_REPL_TRUSTED_SERVICES) ?? native.browserService;
   const browser = configuredBrowser && (!path.isAbsolute(configuredBrowser) || fs.existsSync(configuredBrowser))
     ? configuredBrowser : '@oai/browser-desktop/service';
+  // sky 经过本包包装器以补齐轮次清理；包装器最终仍调用下面定位的官方 Sky 服务。
   const services = { sky: wrapper, ...(chrome ? { browser } : {}) };
   const unique = values => [...new Set(values.filter(Boolean))].join(':');
   Object.assign(env, {
@@ -110,6 +115,8 @@ export function runtimeEnvironment(runtime, { chrome = false, env: source = proc
     const identity = `magpie-gateway-${randomUUID()}`;
     env.NODE_REPL_REQUEST_META = JSON.stringify({ 'x-codex-turn-metadata': { session_id: identity, turn_id: `${identity}-connection` } });
   }
+  // 这是实际控制连接的地址；原始 Sky 模块会依它连接账户下的签名服务。
+  // 本包只计算清理锁归属，不在这里直接连接它，也不读取永久批准文件。
   const socketPath = env[SOCKET_ENV] || path.join(accountHome, SOCKET_SUFFIX);
   if (Buffer.byteLength(socketPath) > 103) throw new Error('Original Computer Use helper socket path exceeds the macOS path limit.');
   const clientHome = 'HOME' in env ? env.HOME : accountHome;
@@ -138,6 +145,7 @@ export async function main(argv = process.argv.slice(2)) {
   const runtime = inspectRuntime(appPath);
   const env = runtimeEnvironment(runtime, { chrome });
   const { startOriginalHost } = await import('./macos_host.mjs');
+  // 私有 lifetime socket 只用于登记/结束本连接的轮次，和原生控制 socket 作用不同。
   const host = await startOriginalHost({ client: runtime.clientPath, env });
   env.LCU_MAC_LIFETIME_SOCKET = host.address;
   let child, killTimer;
@@ -151,6 +159,8 @@ export async function main(argv = process.argv.slice(2)) {
   const interrupt = () => signal('SIGINT');
   try {
     const code = await new Promise((resolve, reject) => {
+      // 启动官方 cua-repl；继承 stdio，使桥接客户端的 MCP 数据直接送达原始运行时。
+      // 官方 cua-repl 再管理 node_repl，永久应用批准与原生策略检查都在原始组件内完成。
       child = spawn(runtime.nodePath, [runtime.entryPath], { env, stdio: 'inherit' });
       child.once('error', reject);
       child.once('close', (code, signal) => resolve(code ?? 128 + (os.constants.signals[signal] || 0)));

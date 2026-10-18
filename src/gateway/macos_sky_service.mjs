@@ -1,3 +1,7 @@
+/**
+ * 工作流 ⑥：运行在官方 worker 中的 Sky 包装器。它把动作委托给原始 service.handleRpc()，
+ * 并登记轮次结束钩子；原生应用访问策略、进程认证与系统操作仍由官方服务负责。
+ */
 // 基于 amontlabs/lcu v0.11.4，提交 bf45b8edf01bc380def2ba8355b60a4ab5e1857d。
 // Copyright (c) 2026 Amont Labs. MIT license; see LICENSE in this directory.
 // 转发原始 Sky 服务；仅对原生键盘路径会丢字的 type_text 文本进行分段适配，
@@ -373,6 +377,7 @@ function unicodeTextSegments(request) {
 let segmentQueue = Promise.resolve();
 const turnEndListeners = new Set();
 
+/** 官方 worker 通过 trusted-services 的 sky 映射进入这里；处理完清理前置步骤后委托原始服务。 */
 export async function handleRpc(request) {
   register();
   const runtime = globalThis.nodeRepl;

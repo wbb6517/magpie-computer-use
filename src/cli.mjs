@@ -1,3 +1,7 @@
+/**
+ * 工作流入口 ②：Agent 根据资源库配置执行 bin/magpie-computer-use.mjs mcp，进入 main()。
+ * 主路径：loadOptions 自动发现 → requireRuntime 预检 → runBridge 接收工具调用。
+ */
 import { randomUUID } from 'node:crypto';
 import { loadOptions, status, runtimePaths } from './config.mjs';
 import { prepareRuntime, verifyOfficialApp } from './bootstrap.mjs';
@@ -35,6 +39,7 @@ export async function main(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   if (args.help || args.h || ['help', '--help', '-h'].includes(args.command)) { process.stdout.write(help); return; }
   // --config 仅兼容 0.4 资源库 argv，不再读取其文件或沿用其中的覆盖设置。
+  // 正常 mcp 入口走自动发现；--app 只给开发诊断临时指定完整官方应用。
   const loaded = loadOptions(args.app ? { options: { appPath: args.app } } : {});
   if (args.surface && !['native', 'javascript'].includes(args.surface)) throw new Error('--surface 必须是 native 或 javascript。');
   const options = loaded;
@@ -44,12 +49,15 @@ export async function main(argv = process.argv.slice(2)) {
     const info = await prepareRuntime(options, { onProgress: message => process.stderr.write(`${message}\n`) });
     process.stdout.write(JSON.stringify(info, null, 2) + '\n'); return;
   }
+  // 这是资源库实际启动的主分支；其余命令是只读诊断或运行时检查。
   if (args.command === 'mcp') {
     assertRuntimeEnvironment();
     const paths = await requireRuntime(options);
+    // paths 已经过当前可信 launcher 的签名预检，桥接层此后才允许启动候选包内的 Node。
     const { runBridge } = await import('./bridge.mjs');
     const bridge = await runBridge({ toolSurface: args.surface || 'native', runtimeCommand: paths.runtimeCommand, clientModulePath: paths.clientModulePath,
       requestTimeoutMs: options.requestTimeoutMs, idleTimeoutMs: options.idleTimeoutMs });
+    // 保持 stdio MCP 进程存活，直到 Agent 断开、取消、空闲或收到退出信号。
     await bridge.closed; return;
   }
   if (args.command === 'doctor') {
