@@ -1,0 +1,12 @@
+node_modules/
+.runtime/
+work/
+*.tgz
+.DS_Store
+
+.idea/
+.env
+.env.*
+*.log
+coverage/
+options.local.json

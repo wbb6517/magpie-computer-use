@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-10-17T02:48:24.439Z",
+  "backend": "embedded-gateway",
+  "externalLcuRequired": false,
+  "appControlAttempted": false,
+  "automaticallyApprovedApps": 0,
+  "server": {
+    "name": "magpie-computer-use",
+    "version": "0.4.0"
+  },
+  "tools": [
+    "list_apps",
+    "get_app_state",
+    "click",
+    "perform_secondary_action",
+    "set_value",
+    "select_text",
+    "scroll",
+    "drag",
+    "press_key",
+    "type_text"
+  ],
+  "nativeDiscovery": {
+    "passed": true,
+    "textCharacters": 24843
+  },
+  "passed": true
+}

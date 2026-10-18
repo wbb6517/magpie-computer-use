@@ -1,0 +1,183 @@
+{
+  "checkedAt": "2026-10-16T15:20:26.110Z",
+  "documentationReviewedOn": "2026-10-17",
+  "documentationTimezone": "Asia/Shanghai",
+  "pluginVersion": "0.4.0",
+  "claudeCodeVersion": "2.1.301",
+  "agentSdkVersion": "0.3.301",
+  "runner": "Official TypeScript Agent SDK using the already installed Claude Code executable",
+  "transport": "stdio",
+  "surface": "native",
+  "model": "workbuddy-ai/deepseek-v4.1-flash",
+  "modelOverridePersisted": false,
+  "builtInToolsDisabled": true,
+  "strictMcpConfig": true,
+  "originalRuntimeSandboxPreserved": true,
+  "approvalHandling": {
+    "originalElicitationRequestsOccurred": true,
+    "humanExplicitlyAuthorizedTarget": true,
+    "target": "dev.magpie.computer-use-test",
+    "testHarnessReusedSameHumanChoice": true,
+    "reuseRestrictedToSameTargetAndMatchingSchema": true,
+    "productionAutomaticAppApprovalEnabled": false,
+    "note": "Later original requests for the same authorized fixture were answered by the test harness using the same human choice, after strict target/schema matching. This run did not have zero automatic responses."
+  },
+  "magpie": {
+    "version": "0.1.1272",
+    "installationMethod": "Extension UI with a local project directory",
+    "isolatedProfileAutoRegistrationPassed": true,
+    "newEntryAgents": [],
+    "resourceLibraryToolCount": 10,
+    "existingUserEntryMigratedThroughUi": true,
+    "launcher": "magpie managed Bun",
+    "optionsSource": "private plugin snapshot",
+    "existingAgentSelectionPreserved": [
+      "claude"
+    ],
+    "settingsSnapshotChangeVerified": {
+      "fromMs": 120000,
+      "toMs": 130000,
+      "restoredMs": 120000
+    }
+  },
+  "discovery": {
+    "connected": true,
+    "publicToolCount": 10,
+    "listAppsPassed": true,
+    "appInventoryPublished": false
+  },
+  "gui": {
+    "target": "dev.magpie.computer-use-test",
+    "content": "Synthetic AppKit acceptance fixture only",
+    "status": "all-ten-tools-executed-with-scroll-direction-limitation",
+    "toolCallCount": 28,
+    "distinctToolsExecuted": 10,
+    "errorResultCount": 0,
+    "tools": {
+      "list_apps": {
+        "isError": false,
+        "targetDiscovered": true
+      },
+      "get_app_state": {
+        "isError": false,
+        "accessibilityStateReturned": true,
+        "imageBlockReturned": true
+      },
+      "click": {
+        "isError": false,
+        "counterBefore": 0,
+        "counterAfter": 1
+      },
+      "set_value": {
+        "isError": false,
+        "inputAfter": "MCP-SET"
+      },
+      "press_key": {
+        "isError": false,
+        "keysExecuted": [
+          "super+a",
+          "Return"
+        ],
+        "selectedTextAfterSuperA": "MCP-SET"
+      },
+      "type_text": {
+        "isError": false,
+        "inputAfter": "MCP-TYPED"
+      },
+      "select_text": {
+        "isError": false,
+        "selectedText": "beta"
+      },
+      "perform_secondary_action": {
+        "isError": false,
+        "action": "Increment",
+        "stepBefore": 0,
+        "stepAfter": 1,
+        "additionalActionExecuted": "Scroll Down"
+      },
+      "drag": {
+        "isError": false,
+        "sliderBefore": 20,
+        "sliderAfterApprox": 80.47,
+        "displayedSliderLabel": 80
+      },
+      "scroll": {
+        "isError": false,
+        "contentMovementObserved": true,
+        "status": "direction-semantics-limited",
+        "observations": [
+          {
+            "direction": "up",
+            "pages": 2,
+            "scrollbarBefore": 0,
+            "scrollbarAfterImmediate": 0.8442953020134228,
+            "scrollbarAfterRefresh": 1
+          },
+          {
+            "direction": "down",
+            "pages": 2,
+            "scrollbarAfter": 0.1275167785234899
+          },
+          {
+            "direction": "down",
+            "pages": 1,
+            "scrollbarAfter": 0
+          }
+        ],
+        "limitation": "Observed up/down behavior was opposite to intuitive document-content navigation in this environment. Root cause is not established; no attribution to natural-scroll settings is made."
+      }
+    },
+    "guiRuntimeVersionReliablyCaptured": false
+  },
+  "tests": {
+    "unitPassed": 31,
+    "syntaxAndManifestModulesPassed": 26,
+    "pageChecksPassed": 8,
+    "originalReplVarResetRegressionCovered": true,
+    "unitTotal": 31,
+    "npmPackDryRunPassed": true,
+    "npmPackFileCount": 45,
+    "officialBinariesIncluded": false,
+    "guiFixtureCleanup": {
+      "cancelDuringCompilation": {
+        "exitCode": 0,
+        "temporaryDirectoryCount": 0
+      },
+      "ctrlCAfterLaunchServicesWindowOpened": {
+        "exitCode": 0,
+        "temporaryDirectoryCount": 0
+      }
+    }
+  },
+  "installationMetadataAtDocumentationReview": {
+    "appVersion": "26.1013.31256",
+    "runtimeVersion": "0.0.30/20261014203459-0849368674e2",
+    "platform": "darwin-arm64",
+    "isProofOfGuiRunRuntimeVersion": false,
+    "currentReadOnlyRuntimeVerification": "verification.json",
+    "currentReadOnlySmokeCheckedAt": "2026-10-17T02:48:24.439Z",
+    "currentReadOnlySmokePassed": true
+  },
+  "limitations": [
+    "Only the synthetic AppKit fixture was controlled; Chrome, every Agent, every model and all parameter combinations were not tested.",
+    "Scroll movement was verified, but up/down direction semantics differed from intuitive content navigation; cause remains unknown.",
+    "A default aihub model request returned 502; the successful run used a temporary override to an already configured model.",
+    "An earlier nested sandbox-exec launch was blocked by the outer process sandbox; the retest used normal host authorization without disabling the original runtime sandbox.",
+    "Non-interactive claude -p previously could not complete the original app elicitation.",
+    "Returned image blocks do not prove image understanding by every model."
+  ],
+  "rawLogsPublished": false,
+  "accountOrLocalPathsPublished": false,
+  "publishedArtifacts": {
+    "magpieSettingsScreenshot": "screenshot.jpg",
+    "syntheticGuiResultScreenshot": "gui-test.jpg"
+  },
+  "cleanup": {
+    "downloadedRuntimePresent": false,
+    "workCachePresent": false,
+    "temporarySdkBuildCacheAndRawLogsRemoved": true,
+    "temporaryWebServersAndFixtureStopped": true,
+    "developmentStagingCopiesRemoved": true,
+    "sourceSdkAndFixtureTemporaryBytesRemoved": 169664048
+  }
+}
