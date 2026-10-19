@@ -32,4 +32,4 @@ npm 发布前可从 magpie“扩展 → 插件”添加 `github:wbb6517/magpie-c
 
 npm 搜索索引可能晚于包发布更新。GitHub 发现使用 `magpie-plugin` topic；仓库中的 `repository` 让 magpie 将已发布包关联到 npm 安装来源。
 
-官方推荐列表单独通过 `magpie-community/plugins` 的 `registry.json` 收录，本包应使用工具类型 `kind: "tools"`，不声明虚构的模型供应商。npm 发布不等于推荐收录；申请推荐 PR 和修改 GitHub topic 应按维护者的另行安排执行。
+官方推荐列表单独通过 `magpie-community/plugins` 的 `registry.json` 收录，本包使用中间件类型 `kind: "middleware"`，不声明虚构的模型供应商。npm 发布不等于推荐收录；申请推荐 PR 和修改 GitHub topic 应按维护者的另行安排执行。
