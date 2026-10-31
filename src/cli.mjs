@@ -12,7 +12,7 @@ export function parseArgs(argv) {
   const values = {};
   while (args.length) {
     const flag = args.shift();
-    if (['--json', '--help', '-h'].includes(flag)) { values[flag.replace(/^--?/, '')] = true; continue; }
+    if (['--json', '--help', '-h', '--gateway'].includes(flag)) { values[flag.replace(/^--?/, '')] = true; continue; }
     if (!['--config', '--app', '--surface'].includes(flag)) throw new Error(`未知参数：${flag}`);
     if (!args.length || args[0].startsWith('--')) throw new Error(`${flag} 缺少值。`);
     values[flag.slice(2)] = args.shift();
@@ -56,7 +56,7 @@ export async function main(argv = process.argv.slice(2)) {
     // paths 已经过当前可信 launcher 的签名预检，桥接层此后才允许启动候选包内的 Node。
     const { runBridge } = await import('./bridge.mjs');
     const bridge = await runBridge({ toolSurface: args.surface || 'native', runtimeCommand: paths.runtimeCommand, clientModulePath: paths.clientModulePath,
-      requestTimeoutMs: options.requestTimeoutMs, idleTimeoutMs: options.idleTimeoutMs });
+      requestTimeoutMs: options.requestTimeoutMs, idleTimeoutMs: options.idleTimeoutMs, gateway: Boolean(args.gateway) });
     // 保持 stdio MCP 进程存活，直到 Agent 断开、取消、空闲或收到退出信号。
     await bridge.closed; return;
   }

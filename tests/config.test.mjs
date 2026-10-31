@@ -33,4 +33,5 @@ test('unsafe upstream override is refused and CLI accepts old config syntax only
   assert.throws(() => parseArgs(['mcp', '--config']), /缺少值/);
   assert.throws(() => parseArgs(['prepare', '--unattended']), /未知参数/);
   assert.deepEqual(parseArgs(['mcp', '--config', '/tmp/options.json']), { command: 'mcp', config: '/tmp/options.json' });
+  assert.deepEqual(parseArgs(['mcp', '--gateway']), { command: 'mcp', gateway: true });
 });
