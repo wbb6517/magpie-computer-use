@@ -29,7 +29,7 @@ class PeerTransport {
   async close() { this.toServer.end(); this.onclose?.(); }
 }
 
-async function harness(t, { createClient, fixtureOptions, elicitation, capabilities = { elicitation: {} }, ...options } = {}) {
+async function harness(t, { createClient, fixtureOptions, elicitation, capabilities = { elicitation: {} }, clientName = 'test-host', ...options } = {}) {
   const input = new PassThrough();
   const output = new PassThrough();
   const errorOutput = new PassThrough();
@@ -38,7 +38,7 @@ async function harness(t, { createClient, fixtureOptions, elicitation, capabilit
   const events = [];
   const bridge = await runBridge({ runtimeCommand: ['fixture-never-real-runtime'],
     input, output, errorOutput, idleTimeoutMs: 0, toolSurface: 'javascript', createClient: createClient === null ? undefined : createClient ?? fixtureFactory(events, fixtureOptions), ...options });
-  const peer = new Client({ name: 'test-host', version: '1' }, { capabilities });
+  const peer = new Client({ name: clientName, version: '1' }, { capabilities });
   if (elicitation) peer.setRequestHandler(ElicitRequestSchema, elicitation);
   await peer.connect(new PeerTransport(input, output));
   t.after(async () => { await bridge.close('test'); await peer.close(); });
@@ -99,6 +99,26 @@ test('cancels when downstream cannot elicit instead of allowing silently', async
   const { peer, events } = await harness(t, { capabilities: {} });
   await peer.callTool({ name: 'js', arguments: { code: 'approval' } });
   assert.deepEqual(events.find(event => event.event === 'approval').response, { action: 'cancel' });
+});
+
+test('approves safe target in claude desktop gateway mode when elicitation is unsupported', async t => {
+  const { peer, events } = await harness(t, { capabilities: {}, clientName: 'claude-desktop' });
+  await peer.callTool({ name: 'js', arguments: { code: 'approval' } });
+  assert.deepEqual(events.find(event => event.event === 'approval').response, { action: 'accept', content: {} });
+});
+
+test('approves safe target when gateway option is enabled', async t => {
+  const { peer, events } = await harness(t, { capabilities: {}, gateway: true });
+  await peer.callTool({ name: 'js', arguments: { code: 'approval' } });
+  assert.deepEqual(events.find(event => event.event === 'approval').response, { action: 'accept', content: {} });
+});
+
+test('still refuses agent host approval even in claude desktop gateway mode', async t => {
+  const { peer, events } = await harness(t, {
+    capabilities: {}, clientName: 'claude-desktop', fixtureOptions: { app: 'com.apple.Terminal' },
+  });
+  await peer.callTool({ name: 'js', arguments: { code: 'approval' } });
+  assert.deepEqual(events.find(event => event.event === 'approval').response, { action: 'decline' });
 });
 
 test('never asks the model or host to approve controlling magpie itself', async t => {
