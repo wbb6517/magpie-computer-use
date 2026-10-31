@@ -55,8 +55,9 @@ export async function main(argv = process.argv.slice(2)) {
     const paths = await requireRuntime(options);
     // paths 已经过当前可信 launcher 的签名预检，桥接层此后才允许启动候选包内的 Node。
     const { runBridge } = await import('./bridge.mjs');
+    const idleTimeoutMs = Number(process.env.MAGPIE_COMPUTER_USE_IDLE_TIMEOUT ?? 0);
     const bridge = await runBridge({ toolSurface: args.surface || 'native', runtimeCommand: paths.runtimeCommand, clientModulePath: paths.clientModulePath,
-      requestTimeoutMs: options.requestTimeoutMs, idleTimeoutMs: options.idleTimeoutMs, gateway: Boolean(args.gateway) });
+      requestTimeoutMs: options.requestTimeoutMs, idleTimeoutMs, gateway: Boolean(args.gateway) });
     // 保持 stdio MCP 进程存活，直到 Agent 断开、取消、空闲或收到退出信号。
     await bridge.closed; return;
   }

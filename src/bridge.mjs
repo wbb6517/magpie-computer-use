@@ -97,7 +97,7 @@ export async function runBridge({
     if (closing || signal?.aborted) return { action: 'cancel' };
     if (!server?.getClientCapabilities()?.elicitation) {
       const clientName = String(server?.getClientVersion()?.name ?? '').toLowerCase();
-      const isGateway = gateway || clientName.includes('claude') ||
+      const isGateway = gateway || clientName.includes('claude') || clientName.includes('magpie') ||
         ['1', 'true'].includes(String(process.env.MAGPIE_COMPUTER_USE_GATEWAY ?? '').toLowerCase());
       if (isGateway) return { action: 'accept', content: {} };
       return { action: 'cancel' };
